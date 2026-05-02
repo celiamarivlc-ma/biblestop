@@ -7,7 +7,7 @@
     <style>
         :root { --bg: #0f172a; --p1: #f43f5e; --p2: #0ea5e9; --accent: #70e000; --white: #ffffff; }
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg);
+            font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg);
             color: var(--white); margin: 0; display: flex; flex-direction: column;
             height: 100vh; overflow: hidden; touch-action: manipulation;
         }
@@ -15,15 +15,12 @@
         #score-p1 { bottom: 10px; right: 20px; color: var(--p1); }
         #score-p2 { top: 10px; left: 20px; color: var(--p2); transform: rotate(180deg); }
         
-        #setup-screen, #victory-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; text-align: center; padding: 20px; }
-        #game-screen { display: none; flex-direction: column; height: 100%; position: relative; }
+        #setup-screen, #victory-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; text-align: center; padding: 20px; position: absolute; width: 100%; top: 0; left: 0; z-index: 100; background: var(--bg); }
+        #game-screen { display: none; flex-direction: column; height: 100%; width: 100%; }
         
-        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: background 0.3s; width: 100%; }
+        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 100%; }
         #p2-zone { transform: rotate(180deg); border-bottom: 2px solid rgba(255,255,255,0.1); }
         
-        /* Ajuste para modo solitario: la zona ocupa toda la pantalla */
-        .solo-active { flex: 1; height: 100%; }
-
         .zone-active { background: rgba(112, 224, 0, 0.15) !important; }
         .zone-disabled { opacity: 0.15; pointer-events: none; }
 
@@ -31,18 +28,18 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             background: var(--bg); border: 3px solid var(--accent); padding: 20px; 
             border-radius: 24px; z-index: 10; text-align: center; min-width: 200px;
-            pointer-events: none; /* Para que no bloquee los clics en los botones de atrás */
+            box-shadow: 0 0 30px rgba(112, 224, 0, 0.2);
         }
         #letra-res { color: var(--accent); font-size: 5rem; display: block; line-height: 1; font-weight: 900; }
         #tema-res { font-size: 0.9rem; display: block; font-weight: bold; margin-top: 10px; letter-spacing: 2px; color: #94a3b8; }
         #timer-bar { position: absolute; left: 0; width: 0%; height: 6px; background: var(--accent); bottom: 0; }
 
-        .btn-action { padding: 16px 32px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem; text-transform: uppercase; z-index: 5; }
+        .btn-action { padding: 16px 32px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem; text-transform: uppercase; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
         .btn-rebote { background: #fbbf24 !important; color: #000 !important; }
         
         .input-ans { padding: 14px; border-radius: 12px; border: 2px solid var(--accent); margin-top: 12px; width: 85%; text-align: center; font-size: 1.3rem; background: #1e293b; color: white; outline: none; }
         
-        #fs-btn { position: absolute; top: 15px; right: 15px; font-size: 1.2rem; background: rgba(255,255,255,0.1); border: none; cursor: pointer; z-index: 100; border-radius: 50%; width: 40px; height: 40px; color: white; display: flex; align-items: center; justify-content: center; }
+        #fs-btn { position: absolute; top: 15px; right: 15px; font-size: 1.2rem; background: rgba(255,255,255,0.1); border: none; cursor: pointer; z-index: 200; border-radius: 50%; width: 40px; height: 40px; color: white; display: flex; align-items: center; justify-content: center; }
         
         .hidden { display: none !important; }
         .spinning { animation: shake 0.1s infinite; }
@@ -58,8 +55,9 @@
 
     <div id="setup-screen">
         <h1 style="color: var(--accent); font-size: 3rem; margin: 0;">BIBLIA<br>STOP</h1>
-        <button class="btn-action" style="background: var(--p1); color: white; width: 220px;" onclick="startGame('duelo')">Duelo 1 vs 1</button>
-        <button class="btn-action" style="background: var(--p2); color: white; width: 220px;" onclick="startGame('solo')">Modo Solitario</button>
+        <button class="btn-action" style="background: var(--p1); color: white; width: 240px;" onclick="startGame('duelo')">DUELO 1 VS 1</button>
+        <button class="btn-action" style="background: var(--p2); color: white; width: 240px;" onclick="startGame('solo')">MODO SOLITARIO</button>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 20px;">Gana el primero en llegar a 20 puntos</p>
     </div>
 
     <div id="game-screen">
@@ -73,7 +71,7 @@
 
         <div id="central-display">
             <span id="letra-res">?</span>
-            <span id="tema-res">INICIANDO...</span>
+            <span id="tema-res">¿LISTO?</span>
             <div id="timer-bar"></div>
         </div>
 
@@ -88,18 +86,31 @@
 
     <div id="victory-screen" class="hidden">
         <h1 id="winner-text" style="font-size: 2.5rem; color: var(--accent)"></h1>
-        <button class="btn-action" style="background: var(--white); color: black" onclick="location.reload()">Reiniciar</button>
+        <button class="btn-action" style="background: var(--white); color: black" onclick="location.reload()">Jugar de nuevo</button>
     </div>
 
     <script>
         const letras = "ABCDEFGHJLMNOPRSTUV".split("");
         const temas = ["👤 PERSONAJE", "📍 LUGAR", "✨ SUCESO", "🍎 ALIMENTO", "📖 LIBRO", "🛠️ OBJETO"];
-        let scoreP1 = 0, scoreP2 = 0, timerInterval, letraActual = "", currentPlayer = null, enRebote = false, modoActual = 'duelo';
+        let scoreP1 = 0, scoreP2 = 0, timerInterval, letraActual = "", temaClave = "", currentPlayer = null, enRebote = false, modoActual = 'duelo';
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Inicialización segura del audio
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
         function playNote(freq, duration) {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = 'sine'; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if (!audioCtx) return;
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(freq, audioCtx.currentTime);
             g.gain.setValueAtTime(0.05, audioCtx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
             o.connect(g); g.connect(audioCtx.destination);
@@ -108,23 +119,23 @@
 
         function toggleFS() { 
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(e => {
-                    alert("Para pantalla completa, añade la web a tu pantalla de inicio o usa Chrome/Android.");
-                });
+                document.documentElement.requestFullscreen().catch(() => {}); 
             } else { document.exitFullscreen(); }
         }
 
         function startGame(mode) {
+            initAudio(); // Activar audio con el clic
             modoActual = mode;
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').style.display = 'flex';
             document.getElementById('score-p1').classList.remove('hidden');
             
             if(mode === 'solo') {
-                document.getElementById('p2-zone').classList.add('hidden');
+                document.getElementById('p2-zone').style.display = 'none';
                 document.getElementById('p1-zone').style.flex = "1";
             } else {
                 document.getElementById('score-p2').classList.remove('hidden');
+                document.getElementById('p2-zone').style.display = 'flex';
             }
             spin();
         }
@@ -141,6 +152,7 @@
                 let t = temas[Math.floor(Math.random() * temas.length)];
                 document.getElementById('letra-res').innerText = letraActual;
                 document.getElementById('tema-res').innerText = t;
+                temaClave = t.split(" ")[1];
                 playNote(200 + (count * 15), 0.1);
                 if(count++ > 12) { 
                     clearInterval(interval); 
@@ -152,6 +164,7 @@
 
         function startTimer(speed) {
             let w = 0; const bar = document.getElementById('timer-bar');
+            if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 w += 1; bar.style.width = w + '%';
                 if(w >= 100) { 
@@ -187,4 +200,56 @@
         }
 
         function submit(p) {
-            const ans = document
+            const ans = document.getElementById(`ans-${p}`).value.trim().toUpperCase();
+            if (ans && ans[0] === letraActual && confirm(`¿Confirmas "${ans}"?`)) {
+                clearInterval(timerInterval);
+                playNote(800, 0.4);
+                if(p === 'p1') scoreP1++; else scoreP2++;
+                updateScores();
+                if(scoreP1 >= 20 || scoreP2 >= 20) showVictory(p); else spin();
+            } else {
+                handleFail();
+            }
+        }
+
+        function handleFail() {
+            clearInterval(timerInterval);
+            playNote(100, 0.3);
+            if(modoActual === 'duelo' && !enRebote) {
+                enRebote = true;
+                const oponente = currentPlayer === 'p1' ? 'p2' : 'p1';
+                resetInputs();
+                const btnOponente = document.getElementById(`btn-${oponente}`);
+                btnOponente.innerText = "¡REBOTE!";
+                btnOponente.classList.add('btn-rebote');
+                document.getElementById(`${currentPlayer}-zone`).classList.add('zone-disabled');
+                document.getElementById(`${oponente}-zone`).classList.remove('zone-disabled');
+                currentPlayer = null;
+            } else {
+                spin();
+            }
+        }
+
+        function updateScores() {
+            document.getElementById('score-p1').innerText = scoreP1;
+            document.getElementById('score-p2').innerText = scoreP2;
+        }
+
+        function resetInputs() {
+            document.querySelectorAll('.player-zone button').forEach(b => {
+                b.classList.remove('hidden', 'btn-rebote');
+                b.innerText = "¡STOP!";
+            });
+            document.querySelectorAll('.player-zone div').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('input').forEach(i => i.value = "");
+            document.getElementById('timer-bar').style.width = '0%';
+        }
+
+        function showVictory(p) {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+            document.getElementById('winner-text').innerText = modoActual === 'solo' ? "¡LOGRADO!" : "¡GANA JUGADOR " + (p === 'p1' ? "1" : "2") + "!";
+        }
+    </script>
+</body>
+</html>
