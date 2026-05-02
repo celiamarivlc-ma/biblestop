@@ -16,11 +16,14 @@
         #score-p2 { top: 10px; left: 20px; color: var(--p2); transform: rotate(180deg); }
         
         #setup-screen, #victory-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; text-align: center; padding: 20px; }
-        #game-screen { display: none; flex-direction: column; height: 100%; }
+        #game-screen { display: none; flex-direction: column; height: 100%; position: relative; }
         
-        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: background 0.3s; }
+        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: background 0.3s; width: 100%; }
         #p2-zone { transform: rotate(180deg); border-bottom: 2px solid rgba(255,255,255,0.1); }
         
+        /* Ajuste para modo solitario: la zona ocupa toda la pantalla */
+        .solo-active { flex: 1; height: 100%; }
+
         .zone-active { background: rgba(112, 224, 0, 0.15) !important; }
         .zone-disabled { opacity: 0.15; pointer-events: none; }
 
@@ -28,15 +31,19 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             background: var(--bg); border: 3px solid var(--accent); padding: 20px; 
             border-radius: 24px; z-index: 10; text-align: center; min-width: 200px;
+            pointer-events: none; /* Para que no bloquee los clics en los botones de atrás */
         }
         #letra-res { color: var(--accent); font-size: 5rem; display: block; line-height: 1; font-weight: 900; }
         #tema-res { font-size: 0.9rem; display: block; font-weight: bold; margin-top: 10px; letter-spacing: 2px; color: #94a3b8; }
         #timer-bar { position: absolute; left: 0; width: 0%; height: 6px; background: var(--accent); bottom: 0; }
 
-        .btn-action { padding: 16px 32px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem; text-transform: uppercase; }
+        .btn-action { padding: 16px 32px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem; text-transform: uppercase; z-index: 5; }
         .btn-rebote { background: #fbbf24 !important; color: #000 !important; }
         
         .input-ans { padding: 14px; border-radius: 12px; border: 2px solid var(--accent); margin-top: 12px; width: 85%; text-align: center; font-size: 1.3rem; background: #1e293b; color: white; outline: none; }
+        
+        #fs-btn { position: absolute; top: 15px; right: 15px; font-size: 1.2rem; background: rgba(255,255,255,0.1); border: none; cursor: pointer; z-index: 100; border-radius: 50%; width: 40px; height: 40px; color: white; display: flex; align-items: center; justify-content: center; }
+        
         .hidden { display: none !important; }
         .spinning { animation: shake 0.1s infinite; }
         @keyframes shake { 0% { transform: translate(-50%, -50.5%); } 50% { transform: translate(-50%, -49.5%); } }
@@ -44,6 +51,8 @@
 </head>
 <body>
 
+    <button id="fs-btn" onclick="toggleFS()">⛶</button>
+    
     <div id="score-p2" class="score hidden">0</div>
     <div id="score-p1" class="score hidden">0</div>
 
@@ -64,7 +73,7 @@
 
         <div id="central-display">
             <span id="letra-res">?</span>
-            <span id="tema-res">PREPARADOS...</span>
+            <span id="tema-res">INICIANDO...</span>
             <div id="timer-bar"></div>
         </div>
 
@@ -91,10 +100,18 @@
         function playNote(freq, duration) {
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
             o.type = 'sine'; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.05, audioCtx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
             o.connect(g); g.connect(audioCtx.destination);
             o.start(); o.stop(audioCtx.currentTime + duration);
+        }
+
+        function toggleFS() { 
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => {
+                    alert("Para pantalla completa, añade la web a tu pantalla de inicio o usa Chrome/Android.");
+                });
+            } else { document.exitFullscreen(); }
         }
 
         function startGame(mode) {
@@ -102,8 +119,10 @@
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').style.display = 'flex';
             document.getElementById('score-p1').classList.remove('hidden');
+            
             if(mode === 'solo') {
-                document.getElementById('p2-zone').style.display = 'none';
+                document.getElementById('p2-zone').classList.add('hidden');
+                document.getElementById('p1-zone').style.flex = "1";
             } else {
                 document.getElementById('score-p2').classList.remove('hidden');
             }
@@ -158,67 +177,14 @@
                 document.getElementById(`${oponente}-zone`).classList.add('zone-disabled');
             }
             
-            // Fix para el teclado en móviles
             setTimeout(() => {
                 const input = document.getElementById(`ans-${p}`);
                 input.focus();
                 input.click();
-            }, 50);
+            }, 100);
 
             startTimer(150); 
         }
 
         function submit(p) {
-            const ans = document.getElementById(`ans-${p}`).value.trim().toUpperCase();
-            if (ans && ans[0] === letraActual && confirm(`¿Confirmas "${ans}"?`)) {
-                clearInterval(timerInterval);
-                playNote(800, 0.4);
-                if(p === 'p1') scoreP1++; else scoreP2++;
-                updateScores();
-                if(scoreP1 >= 20 || scoreP2 >= 20) showVictory(p); else spin();
-            } else {
-                handleFail();
-            }
-        }
-
-        function handleFail() {
-            clearInterval(timerInterval);
-            playNote(100, 0.3);
-            if(modoActual === 'duelo' && !enRebote) {
-                enRebote = true;
-                const oponente = currentPlayer === 'p1' ? 'p2' : 'p1';
-                resetInputs();
-                const btnOponente = document.getElementById(`btn-${oponente}`);
-                btnOponente.innerText = "¡REBOTE!";
-                btnOponente.classList.add('btn-rebote');
-                document.getElementById(`${currentPlayer}-zone`).classList.add('zone-disabled');
-                document.getElementById(`${oponente}-zone`).classList.remove('zone-disabled');
-                currentPlayer = null;
-            } else {
-                spin();
-            }
-        }
-
-        function updateScores() {
-            document.getElementById('score-p1').innerText = scoreP1;
-            document.getElementById('score-p2').innerText = scoreP2;
-        }
-
-        function resetInputs() {
-            document.querySelectorAll('.player-zone button').forEach(b => {
-                b.classList.remove('hidden', 'btn-rebote');
-                b.innerText = "¡STOP!";
-            });
-            document.querySelectorAll('.player-zone div').forEach(d => d.classList.add('hidden'));
-            document.querySelectorAll('input').forEach(i => i.value = "");
-            document.getElementById('timer-bar').style.width = '0%';
-        }
-
-        function showVictory(p) {
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('victory-screen').classList.remove('hidden');
-            document.getElementById('winner-text').innerText = modoActual === 'solo' ? "¡CONSEGUIDO!" : "¡GANA JUGADOR " + (p === 'p1' ? "1" : "2") + "!";
-        }
-    </script>
-</body>
-</html>
+            const ans = document
