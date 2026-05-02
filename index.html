@@ -3,270 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblia Pop Pro - Plus</title>
+    <title>Biblia Pop Ultra</title>
     <style>
         :root {
-            --bg: #0f172a;
-            --p1: #f43f5e;
-            --p2: #0ea5e9;
-            --accent: #70e000;
-            --white: #ffffff;
+            --bg: #0f172a; --p1: #f43f5e; --p2: #0ea5e9; --accent: #70e000; --white: #ffffff;
         }
-
         body {
-            font-family: 'Arial Rounded MT Bold', sans-serif;
-            background-color: var(--bg);
-            color: var(--white);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            font-family: 'Arial Rounded MT Bold', sans-serif; background-color: var(--bg);
+            color: var(--white); margin: 0; display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden; touch-action: manipulation;
         }
 
+        /* Marcadores */
         .score {
-            position: absolute;
-            font-size: 2rem;
-            font-weight: bold;
-            padding: 10px 20px;
-            z-index: 20;
-            background: rgba(0,0,0,0.3);
-            border-radius: 15px;
+            position: absolute; font-size: 2.5rem; font-weight: bold; padding: 10px; z-index: 20;
         }
-        #score-p1 { bottom: 20px; right: 20px; color: var(--p1); }
-        #score-p2 { top: 20px; left: 20px; color: var(--p2); transform: rotate(180deg); }
+        #score-p1 { bottom: 10px; right: 20px; color: var(--p1); }
+        #score-p2 { top: 10px; left: 20px; color: var(--p2); transform: rotate(180deg); }
 
-        #setup-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            gap: 20px;
+        /* Pantallas */
+        #setup-screen, #victory-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; gap: 20px; text-align: center;
         }
-
-        #game-screen {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-        }
+        #game-screen { display: none; flex-direction: column; height: 100%; }
 
         .player-zone {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; transition: 0.3s;
         }
-
         #p1-zone { background: rgba(244, 63, 94, 0.05); border-bottom: 2px solid var(--p1); }
         #p2-zone { background: rgba(14, 165, 233, 0.05); border-top: 2px solid var(--p2); transform: rotate(180deg); }
+        
+        .zone-active { background: rgba(112, 224, 0, 0.2) !important; }
+        .zone-disabled { opacity: 0.3; pointer-events: none; }
 
+        /* Centro */
         #central-display {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--bg);
-            border: 4px solid var(--accent);
-            padding: 15px;
-            border-radius: 20px;
-            z-index: 10;
-            text-align: center;
-            min-width: 240px;
-            box-shadow: 0 0 25px var(--accent);
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--bg); border: 4px solid var(--accent); padding: 15px;
+            border-radius: 20px; z-index: 10; text-align: center; min-width: 220px;
         }
-
         #letra-res { color: var(--accent); font-size: 4.5rem; display: block; line-height: 1; }
-        #tema-res { font-size: 1rem; display: block; font-weight: bold; margin-top: 8px; text-transform: uppercase; }
+        #tema-res { font-size: 1rem; display: block; font-weight: bold; margin-top: 5px; }
 
         #timer-bar {
-            position: absolute;
-            left: 0;
-            width: 0%;
-            height: 8px;
-            background: var(--accent);
-            bottom: 0;
-            transition: width 0.1s linear;
+            position: absolute; left: 0; width: 0%; height: 8px; background: var(--accent); bottom: 0;
         }
 
         .btn-action {
-            padding: 15px 30px;
-            border-radius: 30px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: 0.2s;
+            padding: 15px 30px; border-radius: 30px; border: none; font-weight: bold;
+            cursor: pointer; font-size: 1.2rem;
+        }
+        .input-ans {
+            padding: 12px; border-radius: 10px; border: 2px solid var(--accent);
+            margin-top: 10px; width: 80%; text-align: center; font-size: 1.2rem;
+            background: #1e293b; color: white;
         }
 
-        .input-ans {
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px solid var(--accent);
-            margin-top: 10px;
-            width: 80%;
-            text-align: center;
-            font-size: 1.2rem;
-            background: #1e293b;
-            color: white;
-        }
+        /* Fullscreen btn */
+        #fs-btn { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; background: none; border: none; cursor: pointer; z-index: 100; }
 
         .hidden { display: none !important; }
         .spinning { animation: shake 0.1s infinite; }
         @keyframes shake { 0% { transform: translate(-50%, -51%); } 50% { transform: translate(-50%, -49%); } }
+        
+        /* Confeti simple */
+        .confetti { position: absolute; font-size: 2rem; animation: fall 3s linear infinite; z-index: 50; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
     </style>
 </head>
 <body>
 
+    <button id="fs-btn" onclick="toggleFS()">📺</button>
+
     <div id="score-p2" class="score hidden">0</div>
     <div id="score-p1" class="score hidden">0</div>
 
+    <!-- PANTALLA INICIAL -->
     <div id="setup-screen">
-        <h1 style="color: var(--accent); text-align: center;">BIBLIA POP!<br><small style="font-size: 0.9rem; color: white;">NUEVOS TEMAS</small></h1>
+        <h1 style="color: var(--accent)">BIBLIA POP ULTRA</h1>
         <button class="btn-action" style="background: var(--p1); color: white" onclick="startGame('duelo')">MODO DUELO</button>
-        <button class="btn-action" style="background: var(--p2); color: white" onclick="startGame('solo')">MODO SOLITARIO</button>
+        <p>Gana el primero que llegue a 20 puntos</p>
     </div>
 
+    <!-- JUEGO -->
     <div id="game-screen">
         <div id="p2-zone" class="player-zone">
             <button id="btn-p2" class="btn-action" onclick="claim('p2')">¡LO TENGO!</button>
             <div id="input-p2" class="hidden">
-                <input type="text" class="input-ans" placeholder="Escribe..." id="ans-p2">
-                <button class="btn-action" style="background: var(--accent); margin-top:10px" onclick="submit('p2')">ENVIAR</button>
+                <input type="text" class="input-ans" placeholder="Responde..." id="ans-p2">
+                <button class="btn-action" style="background: var(--accent); margin-top:10px" onclick="submit('p2')">OK</button>
             </div>
         </div>
-
         <div id="central-display">
             <span id="letra-res">?</span>
-            <span id="tema-res">PREPARADOS?</span>
+            <span id="tema-res">¿LISTOS?</span>
             <div id="timer-bar"></div>
         </div>
-
         <div id="p1-zone" class="player-zone">
             <button id="btn-p1" class="btn-action" onclick="claim('p1')">¡LO TENGO!</button>
             <div id="input-p1" class="hidden">
-                <input type="text" class="input-ans" placeholder="Escribe..." id="ans-p1">
-                <button class="btn-action" style="background: var(--accent); margin-top:10px" onclick="submit('p1')">ENVIAR</button>
+                <input type="text" class="input-ans" placeholder="Responde..." id="ans-p1">
+                <button class="btn-action" style="background: var(--accent); margin-top:10px" onclick="submit('p1')">OK</button>
             </div>
         </div>
     </div>
 
+    <!-- VICTORIA -->
+    <div id="victory-screen" class="hidden">
+        <h1 id="winner-text" style="font-size: 3rem; color: var(--accent)"></h1>
+        <button class="btn-action" style="background: var(--white)" onclick="location.reload()">REPETIR</button>
+    </div>
+
     <script>
         const letras = "ABCDEFGHJLMNOPRSTUV".split("");
-        // NUEVAS CATEGORÍAS
         const temas = ["👤 PERSONAJE", "📍 LUGAR", "✨ SUCESO", "🍎 ALIMENTO", "📖 LIBRO", "🛠️ OBJETO"];
-        
-        let scoreP1 = 0;
-        let scoreP2 = 0;
-        let timerInterval;
-        let letraActual = "";
-        let temaActualClave = "";
-        
+        let scoreP1 = 0, scoreP2 = 0, timerInterval, letraActual = "", temaClave = "", currentPlayer = null, rebote = false;
+
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(freq, type, duration) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type; osc.frequency.value = freq;
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-            osc.stop(audioCtx.currentTime + duration);
+        function playSound(f, t, d) {
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type = t; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+            o.start(); g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d);
         }
 
-        let diccionario = JSON.parse(localStorage.getItem('bibliaDictV2')) || {
-            "PERSONAJE": ["MOISES", "PEDRO", "DAVID", "ESTER", "NOE"],
-            "LUGAR": ["JERUSALEN", "BELEN", "EGIPTO"],
-            "LIBRO": ["GENESIS", "EXODO", "MATEO", "JUAN"],
-            "SUCESO": ["RESURRECCION", "DILUVIO", "BAUTISMO", "PENTECOSTES"],
-            "ALIMENTO": ["MANA", "TRIGO", "MIEL", "HIGO", "UVA", "PAN"],
-            "OBJETO": ["ARCA", "HONDA", "ALTAR"]
-        };
+        function toggleFS() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
 
         function startGame(mode) {
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').style.display = 'flex';
             document.querySelectorAll('.score').forEach(s => s.classList.remove('hidden'));
-            if(mode === 'solo') document.getElementById('p2-zone').style.visibility = 'hidden';
             spin();
         }
 
         function spin() {
+            rebote = false; currentPlayer = null;
+            document.querySelectorAll('.player-zone').forEach(z => { z.classList.remove('zone-disabled', 'zone-active'); });
             const display = document.getElementById('central-display');
             display.classList.add('spinning');
             resetInputs();
-            
             let count = 0;
             const interval = setInterval(() => {
                 letraActual = letras[Math.floor(Math.random() * letras.length)];
                 let t = temas[Math.floor(Math.random() * temas.length)];
                 document.getElementById('letra-res').innerText = letraActual;
                 document.getElementById('tema-res').innerText = t;
-                temaActualClave = t.split(" ")[1]; 
-                playSound(300 + (count * 15), 'sine', 0.05);
-                count++;
-                if(count > 15) {
-                    clearInterval(interval);
-                    display.classList.remove('spinning');
-                    playSound(700, 'triangle', 0.3);
-                    startTimer();
-                }
+                temaClave = t.split(" ")[1];
+                playSound(300 + (count * 10), 'sine', 0.05);
+                if(count++ > 15) { clearInterval(interval); display.classList.remove('spinning'); startTimer(100); }
             }, 80);
         }
 
-        function startTimer() {
-            let width = 0;
-            const bar = document.getElementById('timer-bar');
+        function startTimer(speed) {
+            let w = 0; const bar = document.getElementById('timer-bar');
             timerInterval = setInterval(() => {
-                width += 1;
-                bar.style.width = width + '%';
-                if(width >= 100) {
-                    clearInterval(timerInterval);
-                    playSound(100, 'sawtooth', 0.5);
-                    alert("¡TIEMPO AGOTADO!");
-                    spin();
+                w += 1; bar.style.width = w + '%';
+                if(w >= 100) { 
+                    clearInterval(timerInterval); 
+                    if(currentPlayer) handleFail(); // Si alguien pulsó y no respondió
+                    else { playSound(100, 'sawtooth', 0.5); spin(); }
                 }
-            }, 100); 
+            }, speed); 
         }
 
-        function claim(player) {
+        function claim(p) {
+            if(currentPlayer) return;
             clearInterval(timerInterval);
+            currentPlayer = p;
             playSound(500, 'sine', 0.2);
-            document.getElementById(`btn-${player}`).classList.add('hidden');
-            document.getElementById(`input-${player}`).classList.remove('hidden');
-            document.getElementById(`ans-${player}`).focus();
+            document.getElementById(`btn-${p}`).classList.add('hidden');
+            document.getElementById(`input-${p}`).classList.remove('hidden');
+            document.getElementById(`${p}-zone`).classList.add('zone-active');
+            document.getElementById(`${p === 'p1' ? 'p2' : 'p1'}-zone`).classList.add('zone-disabled');
+            document.getElementById(`ans-${p}`).focus();
+            startTimer(150); // 15 segundos para escribir
         }
 
-        function submit(player) {
-            const input = document.getElementById(`ans-${player}`);
-            const respuesta = input.value.trim().toUpperCase();
-
-            if (!respuesta || respuesta[0] !== letraActual) {
-                playSound(150, 'square', 0.3);
-                alert(`¡ERROR! La respuesta debe empezar con ${letraActual}`);
-                return;
-            }
-
-            let aceptada = false;
-            if (diccionario[temaActualClave] && diccionario[temaActualClave].includes(respuesta)) {
-                aceptada = true;
-            } else {
-                if (confirm(`"${respuesta}" no está en mi lista de ${temaActualClave}. ¿El grupo la acepta?`)) {
-                    if(!diccionario[temaActualClave]) diccionario[temaActualClave] = [];
-                    diccionario[temaActualClave].push(respuesta);
-                    localStorage.setItem('bibliaDictV2', JSON.stringify(diccionario));
-                    aceptada = true;
-                }
-            }
-
-            if (aceptada) {
+        function submit(p) {
+            const ans = document.getElementById(`ans-${p}`).value.trim().toUpperCase();
+            if (ans && ans[0] === letraActual && confirm(`¿Aceptan "${ans}"?`)) {
+                clearInterval(timerInterval);
                 playSound(900, 'sine', 0.4);
-                if(player === 'p1') scoreP1++; else scoreP2++;
-                document.getElementById('score-p1').innerText = scoreP1;
-                document.getElementById('score-p2').innerText = scoreP2;
+                if(p === 'p1') scoreP1++; else scoreP2++;
+                updateScores();
+                if(scoreP1 >= 20 || scoreP2 >= 20) showVictory(p); else spin();
+            } else {
+                handleFail();
+            }
+        }
+
+        function handleFail() {
+            clearInterval(timerInterval);
+            if(!rebote) {
+                rebote = true;
+                const oponente = currentPlayer === 'p1' ? 'p2' : 'p1';
+                alert("¡FALLO! Rebote para el oponente...");
+                resetInputs();
+                currentPlayer = null;
+                claim(oponente);
+            } else {
+                alert("Nadie acertó. Siguiente ronda.");
                 spin();
             }
+        }
+
+        function updateScores() {
+            document.getElementById('score-p1').innerText = scoreP1;
+            document.getElementById('score-p2').innerText = scoreP2;
         }
 
         function resetInputs() {
@@ -274,6 +218,21 @@
             document.querySelectorAll('.player-zone div').forEach(d => d.classList.add('hidden'));
             document.querySelectorAll('input').forEach(i => i.value = "");
             document.getElementById('timer-bar').style.width = '0%';
+        }
+
+        function showVictory(p) {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+            document.getElementById('winner-text').innerText = "¡VICTORIA PARA EL JUGADOR " + (p === 'p1' ? "1" : "2") + "!";
+            for(let i=0; i<30; i++) createConfetti();
+        }
+
+        function createConfetti() {
+            const c = document.createElement('div'); c.className = 'confetti';
+            c.innerText = ['🙌','✨','🙏','🔥','📖'][Math.floor(Math.random()*5)];
+            c.style.left = Math.random() * 100 + 'vw';
+            c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            document.body.appendChild(c);
         }
     </script>
 </body>
