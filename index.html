@@ -3,106 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Biblia Pop Ultra - Fixed</title>
+    <title>Biblia Stop</title>
     <style>
         :root { --bg: #0f172a; --p1: #f43f5e; --p2: #0ea5e9; --accent: #70e000; --white: #ffffff; }
         body {
-            font-family: 'Arial Rounded MT Bold', sans-serif; background-color: var(--bg);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg);
             color: var(--white); margin: 0; display: flex; flex-direction: column;
             height: 100vh; overflow: hidden; touch-action: manipulation;
         }
-        .score { position: absolute; font-size: 2.5rem; font-weight: bold; padding: 10px; z-index: 20; }
+        .score { position: absolute; font-size: 2.2rem; font-weight: 800; padding: 10px; z-index: 20; font-variant-numeric: tabular-nums; }
         #score-p1 { bottom: 10px; right: 20px; color: var(--p1); }
         #score-p2 { top: 10px; left: 20px; color: var(--p2); transform: rotate(180deg); }
-        #setup-screen, #victory-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; text-align: center; }
+        
+        #setup-screen, #victory-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; text-align: center; padding: 20px; }
         #game-screen { display: none; flex-direction: column; height: 100%; }
-        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: 0.3s; }
-        #p1-zone { background: rgba(244, 63, 94, 0.05); border-bottom: 2px solid var(--p1); }
-        #p2-zone { background: rgba(14, 165, 233, 0.05); border-top: 2px solid var(--p2); transform: rotate(180deg); }
-        .zone-active { background: rgba(112, 224, 0, 0.2) !important; }
-        .zone-disabled { opacity: 0.2; pointer-events: none; }
-        #central-display { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg); border: 4px solid var(--accent); padding: 15px; border-radius: 20px; z-index: 10; text-align: center; min-width: 220px; }
-        #letra-res { color: var(--accent); font-size: 4.5rem; display: block; line-height: 1; }
-        #tema-res { font-size: 1rem; display: block; font-weight: bold; margin-top: 5px; }
-        #timer-bar { position: absolute; left: 0; width: 0%; height: 8px; background: var(--accent); bottom: 0; }
-        .btn-action { padding: 15px 30px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; font-size: 1.2rem; }
-        .btn-rebote { background: #fbbf24 !important; color: #000 !important; animation: pulse 0.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        .input-ans { padding: 12px; border-radius: 10px; border: 2px solid var(--accent); margin-top: 10px; width: 80%; text-align: center; font-size: 1.2rem; background: #1e293b; color: white; }
-        #fs-btn { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; background: none; border: none; cursor: pointer; z-index: 100; }
+        
+        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: background 0.3s; }
+        #p1-zone { border-bottom: 2px solid rgba(255,255,255,0.1); }
+        #p2-zone { transform: rotate(180deg); border-bottom: 2px solid rgba(255,255,255,0.1); }
+        
+        .zone-active { background: rgba(112, 224, 0, 0.15) !important; }
+        .zone-disabled { opacity: 0.15; pointer-events: none; }
+
+        #central-display { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: var(--bg); border: 3px solid var(--accent); padding: 20px; 
+            border-radius: 24px; z-index: 10; text-align: center; min-width: 200px;
+            box-shadow: 0 0 30px rgba(112, 224, 0, 0.2);
+        }
+        #letra-res { color: var(--accent); font-size: 5rem; display: block; line-height: 1; font-weight: 900; }
+        #tema-res { font-size: 0.9rem; display: block; font-weight: bold; margin-top: 10px; letter-spacing: 2px; color: #94a3b8; }
+        #timer-bar { position: absolute; left: 0; width: 0%; height: 6px; background: var(--accent); bottom: 0; transition: width 0.1s linear; }
+
+        .btn-action { padding: 16px 32px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.1s; }
+        .btn-action:active { transform: scale(0.95); }
+        .btn-rebote { background: #fbbf24 !important; color: #000 !important; box-shadow: 0 0 20px #fbbf24; }
+        
+        .input-ans { padding: 14px; border-radius: 12px; border: 2px solid var(--accent); margin-top: 12px; width: 85%; text-align: center; font-size: 1.3rem; background: #1e293b; color: white; outline: none; }
+        #fs-btn { position: absolute; top: 15px; right: 15px; font-size: 1.2rem; background: rgba(255,255,255,0.1); border: none; cursor: pointer; z-index: 100; border-radius: 50%; width: 40px; height: 40px; color: white; }
+        
         .hidden { display: none !important; }
         .spinning { animation: shake 0.1s infinite; }
-        @keyframes shake { 0% { transform: translate(-50%, -51%); } 50% { transform: translate(-50%, -49%); } }
-        .confetti { position: absolute; font-size: 2rem; animation: fall 3s linear infinite; z-index: 50; }
-        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
+        @keyframes shake { 0% { transform: translate(-50%, -50.5%); } 50% { transform: translate(-50%, -49.5%); } }
+        .confetti { position: absolute; font-size: 2rem; animation: fall 3s linear forwards; z-index: 50; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <button id="fs-btn" onclick="toggleFS()">📺</button>
+    <button id="fs-btn" onclick="toggleFS()">⛶</button>
     <div id="score-p2" class="score hidden">0</div>
     <div id="score-p1" class="score hidden">0</div>
 
     <div id="setup-screen">
-        <h1 style="color: var(--accent)">BIBLIA POP ULTRA</h1>
-        <button class="btn-action" style="background: var(--p1); color: white" onclick="startGame()">MODO DUELO</button>
-        <p>Gana el primero que llegue a 20</p>
+        <h1 style="color: var(--accent); font-size: 3rem; margin: 0;">BIBLIA<br>STOP</h1>
+        <div style="display: flex; flex-direction: column; gap: 15px; width: 260px;">
+            <button class="btn-action" style="background: var(--p1); color: white" onclick="startGame('duelo')">Duelo 1 vs 1</button>
+            <button class="btn-action" style="background: var(--p2); color: white" onclick="startGame('solo')">Modo Solitario</button>
+        </div>
+        <p style="color: #64748b; font-size: 0.9rem;">Gana el primero en llegar a 20</p>
     </div>
 
     <div id="game-screen">
         <div id="p2-zone" class="player-zone">
-            <button id="btn-p2" class="btn-action" onclick="claim('p2')">¡LO TENGO!</button>
+            <button id="btn-p2" class="btn-action" style="background: var(--p2); color: white;" onclick="claim('p2')">¡STOP!</button>
             <div id="input-p2" class="hidden">
-                <input type="text" class="input-ans" placeholder="Responde..." id="ans-p2" autocomplete="off">
-                <button class="btn-action" style="background: var(--accent); margin-top:10px" onclick="submit('p2')">OK</button>
+                <input type="text" class="input-ans" placeholder="Respuesta..." id="ans-p2" autocomplete="off">
+                <button class="btn-action" style="background: var(--accent); margin-top:10px" onclick="submit('p2')">LISTO</button>
             </div>
         </div>
+
         <div id="central-display">
             <span id="letra-res">?</span>
-            <span id="tema-res">¿LISTOS?</span>
+            <span id="tema-res">ESPERANDO...</span>
             <div id="timer-bar"></div>
         </div>
+
         <div id="p1-zone" class="player-zone">
-            <button id="btn-p1" class="btn-action" onclick="claim('p1')">¡LO TENGO!</button>
+            <button id="btn-p1" class="btn-action" style="background: var(--p1); color: white;" onclick="claim('p1')">¡STOP!</button>
             <div id="input-p1" class="hidden">
-                <input type="text" class="input-ans" placeholder="Responde..." id="ans-p1" autocomplete="off">
-                <button class="btn-action" style="background: var(--accent); margin-top:10px" onclick="submit('p1')">OK</button>
+                <input type="text" class="input-ans" placeholder="Respuesta..." id="ans-p1" autocomplete="off">
+                <button class="btn-action" style="background: var(--accent); margin-top:10px" onclick="submit('p1')">LISTO</button>
             </div>
         </div>
     </div>
 
     <div id="victory-screen" class="hidden">
-        <h1 id="winner-text" style="font-size: 3rem; color: var(--accent)"></h1>
-        <button class="btn-action" style="background: var(--white)" onclick="location.reload()">REPETIR</button>
+        <h1 id="winner-text" style="font-size: 2.5rem; color: var(--accent)"></h1>
+        <button class="btn-action" style="background: var(--white); color: black" onclick="location.reload()">Jugar de nuevo</button>
     </div>
 
     <script>
         const letras = "ABCDEFGHJLMNOPRSTUV".split("");
         const temas = ["👤 PERSONAJE", "📍 LUGAR", "✨ SUCESO", "🍎 ALIMENTO", "📖 LIBRO", "🛠️ OBJETO"];
-        let scoreP1 = 0, scoreP2 = 0, timerInterval, letraActual = "", temaClave = "", currentPlayer = null, enRebote = false;
+        let scoreP1 = 0, scoreP2 = 0, timerInterval, letraActual = "", temaClave = "", currentPlayer = null, enRebote = false, modoActual = 'duelo';
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(f, t, d) {
+        
+        function playNote(freq, type, duration, vol=0.1) {
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = t; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
-            o.start(); g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d);
+            o.type = type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            g.gain.setValueAtTime(vol, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + duration);
         }
 
-        function toggleFS() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+        function toggleFS() { 
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => {}); 
+            else document.exitFullscreen(); 
+        }
 
-        function startGame() {
+        function startGame(mode) {
+            modoActual = mode;
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').style.display = 'flex';
-            document.querySelectorAll('.score').forEach(s => s.classList.remove('hidden'));
+            document.getElementById('score-p1').classList.remove('hidden');
+            if(mode === 'duelo') document.getElementById('score-p2').classList.remove('hidden');
+            else document.getElementById('p2-zone').classList.add('hidden');
             spin();
         }
 
         function spin() {
             enRebote = false; currentPlayer = null;
             document.querySelectorAll('.player-zone').forEach(z => z.classList.remove('zone-disabled', 'zone-active'));
-            document.querySelectorAll('.btn-action').forEach(b => b.classList.remove('btn-rebote'));
-            document.getElementById('btn-p1').innerText = "¡LO TENGO!";
-            document.getElementById('btn-p2').innerText = "¡LO TENGO!";
             const display = document.getElementById('central-display');
             display.classList.add('spinning');
             resetInputs();
@@ -113,9 +137,14 @@
                 document.getElementById('letra-res').innerText = letraActual;
                 document.getElementById('tema-res').innerText = t;
                 temaClave = t.split(" ")[1];
-                playSound(300 + (count * 10), 'sine', 0.05);
-                if(count++ > 15) { clearInterval(interval); display.classList.remove('spinning'); startTimer(100); }
-            }, 80);
+                playNote(150 + (count * 10), 'sine', 0.1, 0.05);
+                if(count++ > 12) { 
+                    clearInterval(interval); 
+                    display.classList.remove('spinning'); 
+                    playNote(440, 'triangle', 0.4, 0.1); 
+                    startTimer(100); 
+                }
+            }, 90);
         }
 
         function startTimer(speed) {
@@ -125,35 +154,34 @@
                 if(w >= 100) { 
                     clearInterval(timerInterval); 
                     if(currentPlayer) handleFail(); 
-                    else { playSound(100, 'sawtooth', 0.5); spin(); }
+                    else { playNote(100, 'sine', 0.5, 0.1); spin(); }
                 }
             }, speed); 
         }
 
         function claim(p) {
+            if(currentPlayer) return;
             clearInterval(timerInterval);
             currentPlayer = p;
-            playSound(500, 'sine', 0.2);
+            playNote(523.25, 'sine', 0.2, 0.1); // Nota C5
             
-            // Ocultar botones y mostrar input
             document.getElementById(`btn-${p}`).classList.add('hidden');
             document.getElementById(`input-${p}`).classList.remove('hidden');
             document.getElementById(`${p}-zone`).classList.add('zone-active');
-            document.getElementById(`${p === 'p1' ? 'p2' : 'p1'}-zone`).classList.add('zone-disabled');
+            if(modoActual === 'duelo') document.getElementById(`${p === 'p1' ? 'p2' : 'p1'}-zone`).classList.add('zone-disabled');
             
-            // Forzar enfoque
             const input = document.getElementById(`ans-${p}`);
             input.focus();
-            input.click(); // Doble seguridad para móviles
-            
-            startTimer(150); // 15 seg para responder
+            startTimer(150); 
         }
 
         function submit(p) {
             const ans = document.getElementById(`ans-${p}`).value.trim().toUpperCase();
-            if (ans && ans[0] === letraActual && confirm(`¿Aceptan "${ans}"?`)) {
+            if (ans && ans[0] === letraActual && confirm(`¿Confirmas "${ans}"?`)) {
                 clearInterval(timerInterval);
-                playSound(900, 'sine', 0.4);
+                playNote(659.25, 'sine', 0.5, 0.1); // Nota E5 (Acorde alegre)
+                setTimeout(() => playNote(783.99, 'sine', 0.5, 0.1), 100); // Nota G5
+                
                 if(p === 'p1') scoreP1++; else scoreP2++;
                 updateScores();
                 if(scoreP1 >= 20 || scoreP2 >= 20) showVictory(p); else spin();
@@ -164,23 +192,18 @@
 
         function handleFail() {
             clearInterval(timerInterval);
-            if(!enRebote) {
+            playNote(130, 'sawtooth', 0.4, 0.1);
+            if(modoActual === 'duelo' && !enRebote) {
                 enRebote = true;
                 const oponente = currentPlayer === 'p1' ? 'p2' : 'p1';
-                playSound(200, 'square', 0.4);
-                
-                // Preparar zona para rebote
                 resetInputs();
                 const btnOponente = document.getElementById(`btn-${oponente}`);
                 btnOponente.innerText = "¡REBOTE!";
                 btnOponente.classList.add('btn-rebote');
                 document.getElementById(`${currentPlayer}-zone`).classList.add('zone-disabled');
                 document.getElementById(`${oponente}-zone`).classList.remove('zone-disabled');
-                
                 currentPlayer = null;
-                alert("¡FALLO! El oponente debe tocar REBOTE para contestar.");
             } else {
-                alert("Ronda terminada sin aciertos.");
                 spin();
             }
         }
@@ -191,7 +214,10 @@
         }
 
         function resetInputs() {
-            document.querySelectorAll('.player-zone button').forEach(b => b.classList.remove('hidden'));
+            document.querySelectorAll('.player-zone button').forEach(b => {
+                b.classList.remove('hidden', 'btn-rebote');
+                b.innerText = b.id === 'btn-p1' || b.id === 'btn-p2' ? "¡STOP!" : b.innerText;
+            });
             document.querySelectorAll('.player-zone div').forEach(d => d.classList.add('hidden'));
             document.querySelectorAll('input').forEach(i => i.value = "");
             document.getElementById('timer-bar').style.width = '0%';
@@ -200,16 +226,18 @@
         function showVictory(p) {
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('victory-screen').classList.remove('hidden');
-            document.getElementById('winner-text').innerText = "¡VICTORIA JUGADOR " + (p === 'p1' ? "1" : "2") + "!";
-            for(let i=0; i<40; i++) createConfetti();
+            document.getElementById('winner-text').innerText = modoActual === 'solo' ? "¡FELICIDADES!" : "¡VICTORIA JUGADOR " + (p === 'p1' ? "1" : "2") + "!";
+            for(let i=0; i<50; i++) setTimeout(createConfetti, i * 50);
         }
 
         function createConfetti() {
             const c = document.createElement('div'); c.className = 'confetti';
-            c.innerText = ['🙌','✨','🙏','🔥','📖','🍎'][Math.floor(Math.random()*6)];
+            c.innerText = ['🌟','✨','📖','🙏','🔥','🙌'][Math.floor(Math.random()*6)];
             c.style.left = Math.random() * 100 + 'vw';
-            c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            c.style.top = '-5vh';
+            c.style.animationDuration = (Math.random() * 2 + 1) + 's';
             document.body.appendChild(c);
+            setTimeout(() => c.remove(), 3000);
         }
     </script>
 </body>
