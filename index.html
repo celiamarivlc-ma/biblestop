@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblia Pop Pro</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --p1: #f43f5e; /* Jugador 1 - Rosa/Rojo */
+            --p2: #0ea5e9; /* Jugador 2 - Azul */
+            --accent: #70e000;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Arial Rounded MT Bold', sans-serif;
+            background-color: var(--bg);
+            color: var(--white);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Pantalla de Selección de Modo */
+        #setup-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 20px;
+        }
+
+        /* Layout de Duelo */
+        #game-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .player-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: 0.3s;
+        }
+
+        #p1-zone { background: rgba(244, 63, 94, 0.1); border-bottom: 2px solid var(--p1); }
+        #p2-zone { background: rgba(14, 165, 233, 0.1); border-top: 2px solid var(--p2); transform: rotate(180deg); }
+
+        /* Centro de Control (Ruleta) */
+        #central-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg);
+            border: 4px solid var(--accent);
+            padding: 15px;
+            border-radius: 20px;
+            z-index: 10;
+            text-align: center;
+            min-width: 200px;
+            box-shadow: 0 0 20px var(--accent);
+        }
+
+        .slot-val { font-size: 2rem; font-weight: bold; display: block; }
+        #letra-res { color: var(--accent); font-size: 3.5rem; }
+
+        /* Temporizador */
+        #timer-bar {
+            position: absolute;
+            left: 0;
+            width: 0%;
+            height: 8px;
+            background: var(--accent);
+            bottom: 0;
+            transition: width 1s linear;
+        }
+
+        /* Inputs y Botones */
+        .btn-action {
+            padding: 15px 30px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .input-ans {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            margin-top: 10px;
+            width: 80%;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .hidden { display: none !important; }
+        
+        .spinning { animation: shake 0.1s infinite; }
+        @keyframes shake { 0% { transform: translate(-50%, -52%); } 50% { transform: translate(-50%, -48%); } }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA INICIAL -->
+    <div id="setup-screen">
+        <h1 style="color: var(--accent)">BIBLIA POP!</h1>
+        <button class="btn-action" style="background: var(--p1); color: white" onclick="startGame('duelo')">MODO DUELO (1 vs 1)</button>
+        <button class="btn-action" style="background: var(--p2); color: white" onclick="startGame('solo')">MODO SOLITARIO</button>
+    </div>
+
+    <!-- PANTALLA DE JUEGO -->
+    <div id="game-screen">
+        <div id="p2-zone" class="player-zone">
+            <button id="btn-p2" class="btn-action" onclick="claim('p2')">¡LO TENGO!</button>
+            <div id="input-p2" class="hidden">
+                <input type="text" class="input-ans" placeholder="Escribe aquí..." id="ans-p2">
+                <button onclick="submit('p2')">✅</button>
+            </div>
+        </div>
+
+        <div id="central-display">
+            <span id="letra-res">?</span>
+            <span id="tema-res">TEMA</span>
+            <div id="timer-bar"></div>
+        </div>
+
+        <div id="p1-zone" class="player-zone">
+            <button id="btn-p1" class="btn-action" onclick="claim('p1')">¡LO TENGO!</button>
+            <div id="input-p1" class="hidden">
+                <input type="text" class="input-ans" placeholder="Escribe aquí..." id="ans-p1">
+                <button onclick="submit('p1')">✅</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const letras = "ABCDEFGHJLMNOPRSTUV".split("");
+        const temas = ["👤 PERSONAJE", "📍 LUGAR", "🦁 ANIMAL", "🛠️ OBJETO", "📖 LIBRO"];
+        let timerInterval;
+
+        function startGame(mode) {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').style.display = 'flex';
+            if(mode === 'solo') {
+                document.getElementById('p2-zone').style.visibility = 'hidden';
+                document.getElementById('p2-zone').style.transform = 'none';
+            }
+            spin();
+        }
+
+        function spin() {
+            const display = document.getElementById('central-display');
+            display.classList.add('spinning');
+            
+            let count = 0;
+            const interval = setInterval(() => {
+                document.getElementById('letra-res').innerText = letras[Math.floor(Math.random() * letras.length)];
+                document.getElementById('tema-res').innerText = temas[Math.floor(Math.random() * temas.length)];
+                count++;
+                if(count > 15) {
+                    clearInterval(interval);
+                    display.classList.remove('spinning');
+                    startTimer();
+                }
+            }, 80);
+        }
+
+        function startTimer() {
+            let width = 0;
+            const bar = document.getElementById('timer-bar');
+            bar.style.width = '0%';
+            timerInterval = setInterval(() => {
+                width += 10;
+                bar.style.width = width + '%';
+                if(width >= 100) {
+                    clearInterval(timerInterval);
+                    alert("¡TIEMPO AGOTADO!");
+                    location.reload();
+                }
+            }, 1000); // 10 segundos
+        }
+
+        function claim(player) {
+            clearInterval(timerInterval);
+            document.getElementById(`btn-${player}`).classList.add('hidden');
+            document.getElementById(`input-${player}`).classList.remove('hidden');
+            document.getElementById(`ans-${player}`).focus();
+        }
+
+        function submit(player) {
+            const rpta = document.getElementById(`ans-${player}`).value;
+            if(rpta.length > 2) {
+                alert("¡PUNTO PARA " + player.toUpperCase() + "! Respuesta: " + rpta);
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
