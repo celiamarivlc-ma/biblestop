@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblia Pop Pro</title>
+    <title>Biblia Pop Pro - Aprendizaje</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -23,6 +23,19 @@
             height: 100vh;
             overflow: hidden;
         }
+
+        /* Marcadores de Puntos */
+        .score {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            z-index: 20;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+        }
+        #score-p1 { bottom: 20px; right: 20px; color: var(--p1); }
+        #score-p2 { top: 20px; left: 20px; color: var(--p2); transform: rotate(180deg); }
 
         #setup-screen {
             display: flex;
@@ -46,11 +59,10 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            transition: 0.3s;
         }
 
-        #p1-zone { background: rgba(244, 63, 94, 0.1); border-bottom: 2px solid var(--p1); }
-        #p2-zone { background: rgba(14, 165, 233, 0.1); border-top: 2px solid var(--p2); transform: rotate(180deg); }
+        #p1-zone { background: rgba(244, 63, 94, 0.05); border-bottom: 2px solid var(--p1); }
+        #p2-zone { background: rgba(14, 165, 233, 0.05); border-top: 2px solid var(--p2); transform: rotate(180deg); }
 
         #central-display {
             position: absolute;
@@ -67,8 +79,8 @@
             box-shadow: 0 0 20px var(--accent);
         }
 
-        #letra-res { color: var(--accent); font-size: 3.5rem; display: block; }
-        #tema-res { font-size: 1.2rem; display: block; font-weight: bold; }
+        #letra-res { color: var(--accent); font-size: 4rem; display: block; line-height: 1; }
+        #tema-res { font-size: 1.1rem; display: block; font-weight: bold; margin-top: 5px; }
 
         #timer-bar {
             position: absolute;
@@ -77,7 +89,7 @@
             height: 8px;
             background: var(--accent);
             bottom: 0;
-            transition: width 1s linear;
+            transition: width 0.1s linear;
         }
 
         .btn-action {
@@ -87,6 +99,7 @@
             font-weight: bold;
             cursor: pointer;
             font-size: 1.2rem;
+            transition: 0.2s;
         }
 
         .input-ans {
@@ -102,16 +115,19 @@
         }
 
         .hidden { display: none !important; }
-        
         .spinning { animation: shake 0.1s infinite; }
-        @keyframes shake { 0% { transform: translate(-50%, -52%); } 50% { transform: translate(-50%, -48%); } }
+        @keyframes shake { 0% { transform: translate(-50%, -51%); } 50% { transform: translate(-50%, -49%); } }
     </style>
 </head>
 <body>
 
+    <!-- PUNTUACIÓN -->
+    <div id="score-p2" class="score hidden">0</div>
+    <div id="score-p1" class="score hidden">0</div>
+
     <div id="setup-screen">
-        <h1 style="color: var(--accent)">BIBLIA POP!</h1>
-        <button class="btn-action" style="background: var(--p1); color: white" onclick="startGame('duelo')">MODO DUELO (1 vs 1)</button>
+        <h1 style="color: var(--accent); text-align: center;">BIBLIA POP! <br><small style="font-size: 0.8rem; color: white;">EDICIÓN INTELIGENTE</small></h1>
+        <button class="btn-action" style="background: var(--p1); color: white" onclick="startGame('duelo')">MODO DUELO</button>
         <button class="btn-action" style="background: var(--p2); color: white" onclick="startGame('solo')">MODO SOLITARIO</button>
     </div>
 
@@ -126,7 +142,7 @@
 
         <div id="central-display">
             <span id="letra-res">?</span>
-            <span id="tema-res">TEMA</span>
+            <span id="tema-res">LISTO?</span>
             <div id="timer-bar"></div>
         </div>
 
@@ -143,29 +159,48 @@
         const letras = "ABCDEFGHJLMNOPRSTUV".split("");
         const temas = ["👤 PERSONAJE", "📍 LUGAR", "🦁 ANIMAL", "🛠️ OBJETO", "📖 LIBRO"];
         
-        // DICCIONARIO BÁSICO PARA VALIDAR
-        const diccionario = {
-            "PERSONAJE": ["MOISES", "ABRAHAM", "MARIA", "PEDRO", "PABLO", "DAVID", "SALOMON", "ESTER", "NOE", "ADAN", "EVA", "ISAAC", "JACOB", "JOSE", "SAMUEL", "SAUL"],
-            "LUGAR": ["JERUSALEN", "GALILEA", "EGIPTO", "BELEN", "JORDAN", "SINAI", "NAZARET", "JERICO", "SANTIAGO", "ROMA", "EFESO", "BABILONIA"],
-            "LIBRO": ["GENESIS", "EXODO", "LEVITICO", "MATEO", "MARCOS", "LUCAS", "JUAN", "SALMOS", "PROVERBIOS", "ROMANOS", "ACTOS", "APOCALIPSIS"]
-        };
-
+        let scoreP1 = 0;
+        let scoreP2 = 0;
         let timerInterval;
         let letraActual = "";
         let temaActualNombre = "";
+        
+        // Sonidos usando Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(freq, type, duration) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // CARGAR DICCIONARIO DESDE MEMORIA O USAR POR DEFECTO
+        let diccionario = JSON.parse(localStorage.getItem('bibliaDict')) || {
+            "PERSONAJE": ["MOISES", "ABRAHAM", "MARIA", "PEDRO", "PABLO", "DAVID"],
+            "LUGAR": ["JERUSALEN", "GALILEA", "EGIPTO", "BELEN"],
+            "LIBRO": ["GENESIS", "EXODO", "SALMOS", "MATEO"],
+            "ANIMAL": ["OVEJA", "LEON", "PALOMA"],
+            "OBJETO": ["ALTAR", "ARCA", "ESPADA"]
+        };
 
         function startGame(mode) {
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').style.display = 'flex';
-            if(mode === 'solo') {
-                document.getElementById('p2-zone').style.visibility = 'hidden';
-            }
+            document.querySelectorAll('.score').forEach(s => s.classList.remove('hidden'));
+            if(mode === 'solo') document.getElementById('p2-zone').style.visibility = 'hidden';
             spin();
         }
 
         function spin() {
+            playSound(200, 'square', 0.1);
             const display = document.getElementById('central-display');
             display.classList.add('spinning');
+            resetInputs();
             
             let count = 0;
             const interval = setInterval(() => {
@@ -174,10 +209,12 @@
                 document.getElementById('letra-res').innerText = letraActual;
                 document.getElementById('tema-res').innerText = t;
                 temaActualNombre = t.split(" ")[1]; 
+                playSound(400 + (count * 20), 'sine', 0.05);
                 count++;
                 if(count > 15) {
                     clearInterval(interval);
                     display.classList.remove('spinning');
+                    playSound(800, 'triangle', 0.3);
                     startTimer();
                 }
             }, 80);
@@ -186,20 +223,21 @@
         function startTimer() {
             let width = 0;
             const bar = document.getElementById('timer-bar');
-            bar.style.width = '0%';
             timerInterval = setInterval(() => {
                 width += 1;
                 bar.style.width = width + '%';
                 if(width >= 100) {
                     clearInterval(timerInterval);
+                    playSound(100, 'sawtooth', 0.5);
                     alert("¡TIEMPO AGOTADO!");
-                    location.reload();
+                    spin();
                 }
-            }, 100); // 10 segundos en total
+            }, 100); 
         }
 
         function claim(player) {
             clearInterval(timerInterval);
+            playSound(600, 'sine', 0.2);
             document.getElementById(`btn-${player}`).classList.add('hidden');
             document.getElementById(`input-${player}`).classList.remove('hidden');
             document.getElementById(`ans-${player}`).focus();
@@ -209,28 +247,41 @@
             const input = document.getElementById(`ans-${player}`);
             const respuesta = input.value.trim().toUpperCase();
 
-            // 1. Validar que no esté vacío
-            if (respuesta === "") {
-                alert("¡Escribe algo!");
-                return;
-            }
-
-            // 2. Validar Primera Letra
             if (respuesta[0] !== letraActual) {
-                alert(`¡ERROR! La palabra debe empezar por ${letraActual}`);
+                playSound(150, 'square', 0.3);
+                alert(`¡ERROR! Debe empezar con ${letraActual}`);
                 return;
             }
 
-            // 3. Validar con Diccionario (Si existe el tema en el diccionario)
-            if (diccionario[temaActualNombre]) {
-                if (!diccionario[temaActualNombre].includes(respuesta)) {
-                    const confirmacion = confirm(`"${respuesta}" no está en mi lista de ${temaActualNombre}. ¿El grupo acepta la palabra?`);
-                    if (!confirmacion) return;
+            // Lógica de aprendizaje
+            let aceptada = false;
+            if (diccionario[temaActualNombre] && diccionario[temaActualNombre].includes(respuesta)) {
+                aceptada = true;
+            } else {
+                if (confirm(`"${respuesta}" no está en mi lista. ¿El grupo la acepta como válida?`)) {
+                    // AÑADIR AL DICCIONARIO Y GUARDAR
+                    if(!diccionario[temaActualNombre]) diccionario[temaActualNombre] = [];
+                    diccionario[temaActualNombre].push(respuesta);
+                    localStorage.setItem('bibliaDict', JSON.stringify(diccionario));
+                    aceptada = true;
                 }
             }
 
-            alert("¡PUNTO CORRECTO PARA " + player.toUpperCase() + "!");
-            location.reload();
+            if (aceptada) {
+                playSound(1000, 'sine', 0.4);
+                if(player === 'p1') scoreP1++; else scoreP2++;
+                document.getElementById('score-p1').innerText = scoreP1;
+                document.getElementById('score-p2').innerText = scoreP2;
+                alert(`¡PUNTO PARA EL JUGADOR ${player === 'p1' ? '1' : '2'}!`);
+                spin();
+            }
+        }
+
+        function resetInputs() {
+            document.querySelectorAll('.player-zone button').forEach(b => b.classList.remove('hidden'));
+            document.querySelectorAll('.player-zone div').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('input').forEach(i => i.value = "");
+            document.getElementById('timer-bar').style.width = '0%';
         }
     </script>
 </body>
