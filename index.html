@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BIBLE STOP: ARCADE</title>
+    <title>BIBLE STOP: LEGENDARY</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root { --p1: #ff00ff; --p2: #00ffff; --neon: #33ff00; --bg: #000; }
-        * { box-sizing: border-box; }
         body {
             font-family: 'Press Start 2P', cursive; background: var(--bg); color: var(--neon);
             margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column;
         }
         
-        /* Scanlines y efecto CRT */
+        /* Capa CRT */
         body::after {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
@@ -21,22 +20,20 @@
             background-size: 100% 2px, 3px 100%; pointer-events: none; z-index: 1000;
         }
 
-        #setup-screen, #victory-screen {
+        #setup-screen, #victory-screen, #validation-overlay {
             position: absolute; width: 100%; height: 100%; z-index: 500;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: var(--bg); text-align: center;
+            background: rgba(0,0,0,0.9); text-align: center;
         }
 
         .btn-arcade {
-            font-family: 'Press Start 2P'; padding: 20px; margin: 10px; border: 4px solid;
+            font-family: 'Press Start 2P'; padding: 15px; margin: 10px; border: 4px solid;
             background: transparent; color: inherit; cursor: pointer; font-size: 0.7rem;
-            box-shadow: 4px 4px 0px; transition: 0.1s;
+            box-shadow: 4px 4px 0px;
         }
         .btn-arcade:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px; }
 
-        #fs-btn { position: absolute; top: 10px; right: 10px; z-index: 1100; border: 2px solid; padding: 5px; font-size: 0.5rem; background: #000; color: #fff; cursor: pointer; }
-
-        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border: 2px solid rgba(51, 255, 0, 0.2); }
+        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         #p2-zone { transform: rotate(180deg); color: var(--p2); }
         #p1-zone { color: var(--p1); }
 
@@ -44,93 +41,119 @@
             background: #000; border: 4px double var(--neon); padding: 10px; z-index: 100;
             text-align: center; box-shadow: 0 0 15px var(--neon);
         }
-        #letra-res { font-size: 2.5rem; color: #fff; text-shadow: 0 0 10px var(--neon); }
-        #tema-res { font-size: 0.6rem; margin-top: 8px; }
-
+        #letra-res { font-size: 2.5rem; color: #fff; }
+        
         .input-ans {
             background: #000; border: 3px solid currentColor; color: #fff;
-            padding: 10px; font-family: 'Press Start 2P'; width: 80%; text-align: center; margin-bottom: 10px;
+            padding: 10px; font-family: 'Press Start 2P'; width: 80%; text-align: center;
         }
 
-        /* Barra de tiempo */
-        .timer-container { width: 80%; height: 10px; border: 2px solid currentColor; margin-top: 10px; position: relative; }
-        .timer-bar { width: 100%; height: 100%; background: currentColor; transition: width 1s linear; }
-
+        .timer-bar { width: 100%; height: 8px; background: currentColor; margin: 10px 0; }
         .score { position: absolute; font-size: 0.6rem; padding: 10px; }
-        #score-p1 { bottom: 10px; right: 10px; }
-        #score-p2 { top: 10px; left: 10px; transform: rotate(180deg); }
-
         .hidden { display: none !important; }
-        .pixel { position: fixed; width: 8px; height: 8px; pointer-events: none; }
+        
+        #validation-card { background: #000; border: 5px solid gold; padding: 20px; max-width: 80%; }
     </style>
 </head>
 <body>
 
-    <button id="fs-btn" onclick="toggleFS()">[ FULLSCREEN ]</button>
-    <div id="score-p2" class="score hidden">SCORE: 0</div>
-    <div id="score-p1" class="score hidden">SCORE: 0</div>
+    <button style="position:fixed; top:10px; right:10px; z-index:1100; font-size:0.5rem" onclick="toggleFS()">[ FULLSCREEN ]</button>
+    
+    <div id="score-p2" class="score hidden" style="top:10px; left:10px; transform: rotate(180deg);">SCORE: 0</div>
+    <div id="score-p1" class="score hidden" style="bottom:10px; right:10px;">SCORE: 0</div>
 
+    <!-- PANTALLA INICIAL -->
     <div id="setup-screen">
-        <h1 style="font-size: 1.8rem; margin-bottom: 30px;">BIBLE<br><span style="color:white">STOP</span></h1>
-        <button class="btn-arcade" style="color: var(--p2);" onclick="startGame('duelo')">PLAYER 1 VS 2 [START DUEL]</button>
-        <button class="btn-arcade" style="color: var(--p1);" onclick="startGame('solo')">SOLO MISSION</button>
+        <h1 style="font-size: 1.5rem; color: var(--neon)">BIBLE STOP<br><span style="color:white; font-size:0.8rem">V2.1 LEGENDARY</span></h1>
+        <button class="btn-arcade" style="color: var(--p2)" onclick="startGame('duelo')">DUELO 1 VS 1</button>
+        <button class="btn-arcade" style="color: var(--p1)" onclick="startGame('solo')">MODO SOLITARIO</button>
+    </div>
+
+    <!-- OVERLAY DE VALIDACIÓN -->
+    <div id="validation-overlay" class="hidden">
+        <div id="validation-card">
+            <p style="font-size: 0.6rem; color: #aaa">EL OTRO EQUIPO DEBE DECIDIR:</p>
+            <h2 id="val-word" style="color: white">----</h2>
+            <p id="val-theme" style="font-size: 0.7rem; color: gold"></p>
+            <div style="display:flex">
+                <button class="btn-arcade" style="color: #33ff00" onclick="resolveValidation(true)">SÍ (VALIDAR)</button>
+                <button class="btn-arcade" style="color: #ff0000" onclick="resolveValidation(false)">NO (FAIL)</button>
+            </div>
+        </div>
     </div>
 
     <div id="game-screen" style="display:none; flex-direction: column; height: 100%;">
         <div id="p2-zone" class="player-zone">
             <button id="btn-p2" class="btn-arcade" onclick="claim('p2')">STOP!</button>
             <div id="input-p2" class="hidden">
-                <input type="text" class="input-ans" id="ans-p2" placeholder="WRITING...">
-                <div class="timer-container"><div id="bar-p2" class="timer-bar"></div></div>
-                <button class="btn-arcade" onclick="submit('p2')">OK</button>
+                <input type="text" class="input-ans" id="ans-p2" placeholder="..." autocomplete="off">
+                <div id="bar-p2" class="timer-bar"></div>
+                <button class="btn-arcade" onclick="submit('p2')">SEND</button>
             </div>
         </div>
 
         <div id="central-display">
             <span id="letra-res">?</span>
-            <span id="tema-res">READY?</span>
+            <div id="tema-res" style="font-size: 0.5rem; margin-top:10px">ESPERANDO...</div>
         </div>
 
         <div id="p1-zone" class="player-zone">
             <button id="btn-p1" class="btn-arcade" onclick="claim('p1')">STOP!</button>
             <div id="input-p1" class="hidden">
-                <input type="text" class="input-ans" id="ans-p1" placeholder="WRITING...">
-                <div class="timer-container"><div id="bar-p1" class="timer-bar"></div></div>
-                <button class="btn-arcade" onclick="submit('p1')">OK</button>
+                <input type="text" class="input-ans" id="ans-p1" placeholder="..." autocomplete="off">
+                <div id="bar-p1" class="timer-bar"></div>
+                <button class="btn-arcade" onclick="submit('p1')">SEND</button>
             </div>
         </div>
     </div>
 
-    <div id="victory-screen" class="hidden">
-        <h1 id="winner-text">MISSION COMPLETE</h1>
-        <button class="btn-arcade" onclick="location.reload()">NEW GAME</button>
-    </div>
-
     <script>
-        const letrasBase = "ABCDEFGHJLMNOPRSTUV".split("");
-        const temasBase = ["PERSONAJE", "LUGAR", "SUCESO", "ALIMENTO", "LIBRO", "OBJETO"];
-        let letrasMazo = [], temasMazo = [], timerObj = null;
-        let scoreP1 = 0, scoreP2 = 0, letraActual = "", timeLeft = 10, currentPlayer = null, modoActual = '';
-
-        function toggleFS() {
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-            else document.exitFullscreen();
+        // --- MOTOR DE AUDIO ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
-
-        function getNext(tipo) {
-            if (tipo === 'letra') {
-                if (!letrasMazo.length) letrasMazo = shuffle([...letrasBase]);
-                return letrasMazo.pop();
-            } else {
-                if (!temasMazo.length) temasMazo = shuffle([...temasBase]);
-                return temasMazo.pop();
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            
+            const now = audioCtx.currentTime;
+            if (type === 'hit') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(); osc.stop(now + 0.1);
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now);
+                osc.frequency.linearRampToValueAtTime(50, now + 0.3);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(); osc.stop(now + 0.3);
+            } else if (type === 'win') {
+                [440, 554, 659].forEach((f, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(f, now + (i * 0.1));
+                    g.gain.setValueAtTime(0.1, now + (i * 0.1));
+                    g.gain.linearRampToValueAtTime(0, now + (i * 0.1) + 0.2);
+                    o.start(now + (i * 0.1)); o.stop(now + (i * 0.1) + 0.2);
+                });
             }
         }
 
+        // --- LÓGICA DE DICCIONARIO ---
+        let bibleDict = JSON.parse(localStorage.getItem('bibleDict')) || {};
+
+        const letrasBase = "ABCDEFGHJLMNOPRSTUV".split("");
+        const temasBase = ["PERSONAJE", "LUGAR", "SUCESO", "ALIMENTO", "LIBRO", "OBJETO"];
+        let scoreP1 = 0, scoreP2 = 0, letraActual = "", temaActual = "", currentPlayer = null, timerInt;
+
         function startGame(mode) {
-            modoActual = mode;
+            initAudio();
+            playSound('hit');
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').style.display = 'flex';
             document.getElementById('score-p1').classList.remove('hidden');
@@ -140,19 +163,18 @@
         }
 
         function spin() {
-            clearInterval(timerObj);
+            clearInterval(timerInt);
             currentPlayer = null;
             resetUI();
-            const display = document.getElementById('central-display');
             let count = 0;
-            const interval = setInterval(() => {
+            const int = setInterval(() => {
                 document.getElementById('letra-res').innerText = letrasBase[Math.floor(Math.random()*letrasBase.length)];
-                document.getElementById('tema-res').innerText = "SCANNING...";
-                if(count++ > 12) {
-                    clearInterval(interval);
-                    letraActual = getNext('letra');
+                if(count++ > 10) {
+                    clearInterval(int);
+                    letraActual = letrasBase[Math.floor(Math.random()*letrasBase.length)];
+                    temaActual = temasBase[Math.floor(Math.random()*temasBase.length)];
                     document.getElementById('letra-res').innerText = letraActual;
-                    document.getElementById('tema-res').innerText = "CATEGORY: " + getNext('tema');
+                    document.getElementById('tema-res').innerText = "CATEGORÍA: " + temaActual;
                 }
             }, 80);
         }
@@ -160,35 +182,61 @@
         function claim(p) {
             if(currentPlayer) return;
             currentPlayer = p;
+            playSound('hit');
             document.getElementById(`btn-${p}`).classList.add('hidden');
             document.getElementById(`input-${p}`).classList.remove('hidden');
-            const input = document.getElementById(`ans-${p}`);
-            input.focus();
+            document.getElementById(`ans-${p}`).focus();
             
-            timeLeft = 10;
-            const bar = document.getElementById(`bar-${p}`);
-            bar.style.width = '100%';
-            
-            timerObj = setInterval(() => {
-                timeLeft--;
-                bar.style.width = (timeLeft * 10) + '%';
-                if(timeLeft <= 0) {
-                    alert("TIME OUT! FAIL!");
-                    spin();
-                }
-            }, 1000);
+            let time = 100;
+            timerInt = setInterval(() => {
+                time -= 2;
+                document.getElementById(`bar-${p}`).style.width = time + '%';
+                if(time <= 0) { clearInterval(timerInt); playSound('fail'); spin(); }
+            }, 200);
         }
 
         function submit(p) {
-            const val = document.getElementById(`ans-${p}`).value.trim().toUpperCase();
-            if (val.startsWith(letraActual) && val.length > 2) {
-                if(p === 'p1') scoreP1 += 5; else scoreP2 += 5;
-                updateScores();
-                if(scoreP1 >= 25 || scoreP2 >= 25) showVictory(p);
-                else spin();
+            const word = document.getElementById(`ans-${p}`).value.trim().toUpperCase();
+            if(word.startsWith(letraActual)) {
+                clearInterval(timerInt);
+                // ¿Ya la conocemos?
+                if(bibleDict[temaActual] && bibleDict[temaActual].includes(word)) {
+                    processWin(p, word);
+                } else {
+                    openValidation(word);
+                }
             } else {
-                alert("INVALID! MUST START WITH " + letraActual);
+                playSound('fail');
+                alert("DEBE EMPEZAR POR " + letraActual);
             }
+        }
+
+        function openValidation(word) {
+            document.getElementById('val-word').innerText = word;
+            document.getElementById('val-theme').innerText = "PARA: " + temaActual;
+            document.getElementById('validation-overlay').classList.remove('hidden');
+        }
+
+        function resolveValidation(accepted) {
+            const word = document.getElementById('val-word').innerText;
+            document.getElementById('validation-overlay').classList.add('hidden');
+            
+            if(accepted) {
+                if(!bibleDict[temaActual]) bibleDict[temaActual] = [];
+                bibleDict[temaActual].push(word);
+                localStorage.setItem('bibleDict', JSON.stringify(bibleDict));
+                processWin(currentPlayer, word);
+            } else {
+                playSound('fail');
+                spin();
+            }
+        }
+
+        function processWin(p, word) {
+            playSound('win');
+            if(p === 'p1') scoreP1 += 10; else scoreP2 += 10;
+            updateScores();
+            spin();
         }
 
         function updateScores() {
@@ -202,22 +250,9 @@
             document.querySelectorAll('input').forEach(i => i.value = "");
         }
 
-        function showVictory(p) {
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('victory-screen').classList.remove('hidden');
-            document.getElementById('winner-text').innerText = modoActual === 'solo' ? "MISSION ACCOMPLISHED" : "PLAYER " + (p==='p1'?'1':'2') + " WINS";
-            celebrate();
-        }
-
-        function celebrate() {
-            for(let i=0; i<60; i++) {
-                const p = document.createElement('div');
-                p.className = 'pixel';
-                p.style.left = Math.random() * 100 + 'vw';
-                p.style.backgroundColor = ['#f0f', '#0ff', '#33ff00'][Math.floor(Math.random()*3)];
-                document.body.appendChild(p);
-                p.animate([{ top: '-10px' }, { top: '110vh' }], { duration: 1000 + Math.random()*2000, iterations: Infinity });
-            }
+        function toggleFS() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
         }
     </script>
 </body>
