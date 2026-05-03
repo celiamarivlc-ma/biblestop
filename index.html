@@ -10,9 +10,10 @@
         body {
             font-family: 'Press Start 2P', cursive; background: var(--bg); color: var(--neon);
             margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+            touch-action: manipulation;
         }
         
-        /* Capa CRT */
+        /* Efecto CRT/Scanlines */
         body::after {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
@@ -23,92 +24,100 @@
         #setup-screen, #victory-screen, #validation-overlay {
             position: absolute; width: 100%; height: 100%; z-index: 500;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.9); text-align: center;
+            background: rgba(0,0,0,0.95); text-align: center;
         }
 
         .btn-arcade {
             font-family: 'Press Start 2P'; padding: 15px; margin: 10px; border: 4px solid;
             background: transparent; color: inherit; cursor: pointer; font-size: 0.7rem;
-            box-shadow: 4px 4px 0px;
+            box-shadow: 4px 4px 0px; text-transform: uppercase;
         }
         .btn-arcade:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px; }
 
-        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        #p2-zone { transform: rotate(180deg); color: var(--p2); }
+        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 100%; }
+        #p2-zone { transform: rotate(180deg); color: var(--p2); border-bottom: 2px solid rgba(0, 255, 255, 0.1); }
         #p1-zone { color: var(--p1); }
 
         #central-display { 
             background: #000; border: 4px double var(--neon); padding: 10px; z-index: 100;
-            text-align: center; box-shadow: 0 0 15px var(--neon);
+            text-align: center; box-shadow: 0 0 15px var(--neon); min-width: 180px;
         }
-        #letra-res { font-size: 2.5rem; color: #fff; }
+        #letra-res { font-size: 2.8rem; color: #fff; text-shadow: 0 0 10px var(--neon); }
         
         .input-ans {
             background: #000; border: 3px solid currentColor; color: #fff;
-            padding: 10px; font-family: 'Press Start 2P'; width: 80%; text-align: center;
+            padding: 12px; font-family: 'Press Start 2P'; width: 85%; text-align: center;
+            font-size: 0.8rem; outline: none; margin-top: 10px;
         }
 
-        .timer-bar { width: 100%; height: 8px; background: currentColor; margin: 10px 0; }
-        .score { position: absolute; font-size: 0.6rem; padding: 10px; }
+        /* Barra de Tiempo (30s) */
+        .timer-container { width: 85%; height: 12px; border: 2px solid currentColor; margin: 15px 0; background: #000; }
+        .timer-bar { width: 100%; height: 100%; background: currentColor; transition: width 0.1s linear; }
+
+        .score { position: absolute; font-size: 0.6rem; padding: 10px; font-weight: bold; }
         .hidden { display: none !important; }
         
-        #validation-card { background: #000; border: 5px solid gold; padding: 20px; max-width: 80%; }
+        #validation-card { background: #000; border: 5px solid gold; padding: 25px; max-width: 85%; box-shadow: 0 0 20px gold; }
+
+        #fs-btn { position: fixed; top: 10px; right: 10px; z-index: 1100; background: #000; color: #fff; border: 1px solid; font-size: 0.5rem; padding: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <button style="position:fixed; top:10px; right:10px; z-index:1100; font-size:0.5rem" onclick="toggleFS()">[ FULLSCREEN ]</button>
+    <button id="fs-btn" onclick="toggleFS()">[ FULLSCREEN ]</button>
     
-    <div id="score-p2" class="score hidden" style="top:10px; left:10px; transform: rotate(180deg);">SCORE: 0</div>
-    <div id="score-p1" class="score hidden" style="bottom:10px; right:10px;">SCORE: 0</div>
+    <div id="score-p2" class="score hidden" style="top:10px; left:20px; transform: rotate(180deg);">SCORE: 0</div>
+    <div id="score-p1" class="score hidden" style="bottom:10px; right:20px;">SCORE: 0</div>
 
-    <!-- PANTALLA INICIAL -->
+    <!-- INICIO -->
     <div id="setup-screen">
-        <h1 style="font-size: 1.5rem; color: var(--neon)">BIBLE STOP<br><span style="color:white; font-size:0.8rem">V2.1 LEGENDARY</span></h1>
-        <button class="btn-arcade" style="color: var(--p2)" onclick="startGame('duelo')">DUELO 1 VS 1</button>
+        <h1 style="font-size: 1.8rem; color: var(--neon); margin-bottom: 30px;">BIBLE STOP<br><span style="color:white; font-size:0.6rem">8-BIT EDITION</span></h1>
+        <button class="btn-arcade" style="color: var(--p2)" onclick="startGame('duelo')">INICIAR DUELO</button>
         <button class="btn-arcade" style="color: var(--p1)" onclick="startGame('solo')">MODO SOLITARIO</button>
+        <p style="font-size: 0.5rem; color: #666; margin-top: 20px;">TIEMPO DE RESPUESTA: 30s</p>
     </div>
 
-    <!-- OVERLAY DE VALIDACIÓN -->
+    <!-- VALIDACIÓN HUMANA -->
     <div id="validation-overlay" class="hidden">
         <div id="validation-card">
-            <p style="font-size: 0.6rem; color: #aaa">EL OTRO EQUIPO DEBE DECIDIR:</p>
-            <h2 id="val-word" style="color: white">----</h2>
-            <p id="val-theme" style="font-size: 0.7rem; color: gold"></p>
-            <div style="display:flex">
-                <button class="btn-arcade" style="color: #33ff00" onclick="resolveValidation(true)">SÍ (VALIDAR)</button>
-                <button class="btn-arcade" style="color: #ff0000" onclick="resolveValidation(false)">NO (FAIL)</button>
+            <p style="font-size: 0.5rem; color: #aaa; letter-spacing: 1px;">¿ES CORRECTO?</p>
+            <h2 id="val-word" style="color: white; margin: 15px 0;">----</h2>
+            <p id="val-theme" style="font-size: 0.7rem; color: gold; margin-bottom: 20px;"></p>
+            <div style="display:flex; justify-content: center;">
+                <button class="btn-arcade" style="color: #33ff00" onclick="resolveValidation(true)">SÍ</button>
+                <button class="btn-arcade" style="color: #ff0000" onclick="resolveValidation(false)">NO</button>
             </div>
         </div>
     </div>
 
+    <!-- CAMPO DE JUEGO -->
     <div id="game-screen" style="display:none; flex-direction: column; height: 100%;">
         <div id="p2-zone" class="player-zone">
             <button id="btn-p2" class="btn-arcade" onclick="claim('p2')">STOP!</button>
-            <div id="input-p2" class="hidden">
-                <input type="text" class="input-ans" id="ans-p2" placeholder="..." autocomplete="off">
-                <div id="bar-p2" class="timer-bar"></div>
-                <button class="btn-arcade" onclick="submit('p2')">SEND</button>
+            <div id="input-p2" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <input type="text" class="input-ans" id="ans-p2" placeholder="ESCRIBE..." autocomplete="off">
+                <div class="timer-container"><div id="bar-p2" class="timer-bar"></div></div>
+                <button class="btn-arcade" onclick="submit('p2')">ENVIAR</button>
             </div>
         </div>
 
         <div id="central-display">
             <span id="letra-res">?</span>
-            <div id="tema-res" style="font-size: 0.5rem; margin-top:10px">ESPERANDO...</div>
+            <div id="tema-res" style="font-size: 0.5rem; margin-top:10px; color: #aaa;">LISTO?</div>
         </div>
 
         <div id="p1-zone" class="player-zone">
             <button id="btn-p1" class="btn-arcade" onclick="claim('p1')">STOP!</button>
-            <div id="input-p1" class="hidden">
-                <input type="text" class="input-ans" id="ans-p1" placeholder="..." autocomplete="off">
-                <div id="bar-p1" class="timer-bar"></div>
-                <button class="btn-arcade" onclick="submit('p1')">SEND</button>
+            <div id="input-p1" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <input type="text" class="input-ans" id="ans-p1" placeholder="ESCRIBE..." autocomplete="off">
+                <div class="timer-container"><div id="bar-p1" class="timer-bar"></div></div>
+                <button class="btn-arcade" onclick="submit('p1')">ENVIAR</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- MOTOR DE AUDIO ---
+        // MOTOR DE AUDIO RETRO
         let audioCtx;
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -119,41 +128,39 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            
             const now = audioCtx.currentTime;
+
             if (type === 'hit') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(440, now);
-                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.type = 'square'; osc.frequency.setValueAtTime(600, now);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
                 osc.start(); osc.stop(now + 0.1);
-            } else if (type === 'fail') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now);
-                osc.frequency.linearRampToValueAtTime(50, now + 0.3);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
-                osc.start(); osc.stop(now + 0.3);
             } else if (type === 'win') {
-                [440, 554, 659].forEach((f, i) => {
+                osc.type = 'triangle'; 
+                [523, 659, 783].forEach((f, i) => {
                     const o = audioCtx.createOscillator();
-                    const g = audioCtx.createGain();
-                    o.connect(g); g.connect(audioCtx.destination);
-                    o.frequency.setValueAtTime(f, now + (i * 0.1));
-                    g.gain.setValueAtTime(0.1, now + (i * 0.1));
-                    g.gain.linearRampToValueAtTime(0, now + (i * 0.1) + 0.2);
-                    o.start(now + (i * 0.1)); o.stop(now + (i * 0.1) + 0.2);
+                    o.connect(gain); o.frequency.setValueAtTime(f, now + (i*0.1));
+                    o.start(now + (i*0.1)); o.stop(now + (i*0.1) + 0.1);
                 });
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.4);
+                osc.start(); osc.stop(now + 0.4);
             }
         }
 
-        // --- LÓGICA DE DICCIONARIO ---
+        // DICCIONARIO Y LÓGICA
         let bibleDict = JSON.parse(localStorage.getItem('bibleDict')) || {};
-
         const letrasBase = "ABCDEFGHJLMNOPRSTUV".split("");
-        const temasBase = ["PERSONAJE", "LUGAR", "SUCESO", "ALIMENTO", "LIBRO", "OBJETO"];
+        const temasBase = ["PERSONAJE", "LUGAR", "SUCESO", "ALIMENTO", "LIBRO", "OBJETO", "MUJER BÍBLICA"];
         let scoreP1 = 0, scoreP2 = 0, letraActual = "", temaActual = "", currentPlayer = null, timerInt;
 
+        function toggleFS() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        }
+
         function startGame(mode) {
-            initAudio();
-            playSound('hit');
+            initAudio(); playSound('hit');
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').style.display = 'flex';
             document.getElementById('score-p1').classList.remove('hidden');
@@ -169,14 +176,15 @@
             let count = 0;
             const int = setInterval(() => {
                 document.getElementById('letra-res').innerText = letrasBase[Math.floor(Math.random()*letrasBase.length)];
-                if(count++ > 10) {
+                document.getElementById('tema-res').innerText = "BUSCANDO...";
+                if(count++ > 12) {
                     clearInterval(int);
                     letraActual = letrasBase[Math.floor(Math.random()*letrasBase.length)];
                     temaActual = temasBase[Math.floor(Math.random()*temasBase.length)];
                     document.getElementById('letra-res').innerText = letraActual;
-                    document.getElementById('tema-res').innerText = "CATEGORÍA: " + temaActual;
+                    document.getElementById('tema-res').innerText = "TEMA: " + temaActual;
                 }
-            }, 80);
+            }, 70);
         }
 
         function claim(p) {
@@ -187,27 +195,32 @@
             document.getElementById(`input-${p}`).classList.remove('hidden');
             document.getElementById(`ans-${p}`).focus();
             
-            let time = 100;
+            let time = 100; // Porcentaje de la barra
+            // Ajustado a 30 segundos (100% / 150 pasos de 200ms = 30s)
             timerInt = setInterval(() => {
-                time -= 2;
+                time -= 0.66; // Reduce la barra para que dure 30s aprox
                 document.getElementById(`bar-${p}`).style.width = time + '%';
-                if(time <= 0) { clearInterval(timerInt); playSound('fail'); spin(); }
+                if(time <= 0) { 
+                    clearInterval(timerInt); 
+                    playSound('fail'); 
+                    alert("¡TIEMPO AGOTADO!");
+                    spin(); 
+                }
             }, 200);
         }
 
         function submit(p) {
             const word = document.getElementById(`ans-${p}`).value.trim().toUpperCase();
-            if(word.startsWith(letraActual)) {
+            if(word.startsWith(letraActual) && word.length > 2) {
                 clearInterval(timerInt);
-                // ¿Ya la conocemos?
                 if(bibleDict[temaActual] && bibleDict[temaActual].includes(word)) {
-                    processWin(p, word);
+                    processWin(p);
                 } else {
                     openValidation(word);
                 }
             } else {
                 playSound('fail');
-                alert("DEBE EMPEZAR POR " + letraActual);
+                alert("INVÁLIDO: DEBE EMPEZAR CON " + letraActual);
             }
         }
 
@@ -220,19 +233,18 @@
         function resolveValidation(accepted) {
             const word = document.getElementById('val-word').innerText;
             document.getElementById('validation-overlay').classList.add('hidden');
-            
             if(accepted) {
                 if(!bibleDict[temaActual]) bibleDict[temaActual] = [];
                 bibleDict[temaActual].push(word);
                 localStorage.setItem('bibleDict', JSON.stringify(bibleDict));
-                processWin(currentPlayer, word);
+                processWin(currentPlayer);
             } else {
                 playSound('fail');
                 spin();
             }
         }
 
-        function processWin(p, word) {
+        function processWin(p) {
             playSound('win');
             if(p === 'p1') scoreP1 += 10; else scoreP2 += 10;
             updateScores();
@@ -246,13 +258,8 @@
 
         function resetUI() {
             document.querySelectorAll('.btn-arcade').forEach(b => b.classList.remove('hidden'));
-            document.querySelectorAll('.player-zone div').forEach(d => { if(d.id.includes('input')) d.classList.add('hidden')});
+            document.querySelectorAll('.player-zone > div').forEach(d => d.classList.add('hidden'));
             document.querySelectorAll('input').forEach(i => i.value = "");
-        }
-
-        function toggleFS() {
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-            else document.exitFullscreen();
         }
     </script>
 </body>
